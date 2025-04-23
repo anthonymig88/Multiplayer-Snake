@@ -8,14 +8,16 @@ from aiohttp import web
 players = {}
 connections = set()
 apple = {"x": 300, "y": 300}
-last_growth = []
 
 async def handler(ws):
     player_id = str(id(ws))
     players[player_id] = {
         "x": 100, "y": 100,
-        "length": 1, "trail": [], "color": "lime",
-        "dir": "right", "name": f"Player-{player_id[-4:]}"
+        "length": 1,
+        "trail": [[100, 100]],
+        "color": "lime",
+        "dir": "right",
+        "name": f"Player-{player_id[-4:]}"
     }
     connections.add(ws)
 
@@ -33,28 +35,30 @@ async def handler(ws):
         del players[player_id]
 
 async def broadcast_loop():
-    global last_growth
     while True:
         growth_messages = []
         for pid in players:
-            direction = players[pid]["dir"]
-            if direction == "up": players[pid]["y"] -= 10
-            elif direction == "down": players[pid]["y"] += 10
-            elif direction == "left": players[pid]["x"] -= 10
-            elif direction == "right": players[pid]["x"] += 10
+            p = players[pid]
+            dx = dy = 0
+            if p["dir"] == "up": dy = -10
+            elif p["dir"] == "down": dy = 10
+            elif p["dir"] == "left": dx = -10
+            elif p["dir"] == "right": dx = 10
 
-            players[pid]["x"] = max(0, min(590, players[pid]["x"]))
-            players[pid]["y"] = max(0, min(590, players[pid]["y"]))
+            new_x = max(0, min(590, p["x"] + dx))
+            new_y = max(0, min(590, p["y"] + dy))
+            p["x"], p["y"] = new_x, new_y
+            p["trail"].insert(0, [new_x, new_y])
+            p["trail"] = p["trail"][:p["length"]]
 
-            if abs(players[pid]["x"] - apple["x"]) < 20 and abs(players[pid]["y"] - apple["y"]) < 20:
-                players[pid]["length"] += 1
+            if abs(new_x - apple["x"]) < 10 and abs(new_y - apple["y"]) < 10:
+                p["length"] += 1
                 apple["x"] = random.randint(50, 550)
                 apple["y"] = random.randint(50, 550)
-                growth_messages.append(f"+1 {players[pid]['name']}")
+                growth_messages.append(f"+1 {p['name']}")
 
-        if connections:
-            data = json.dumps({"players": players, "apple": apple, "growth": growth_messages})
-            await asyncio.gather(*[ws.send(data) for ws in connections])
+        data = json.dumps({"players": players, "apple": apple, "growth": growth_messages})
+        await asyncio.gather(*[ws.send(data) for ws in connections])
         await asyncio.sleep(0.1)
 
 async def health_check(request):

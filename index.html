@@ -4,7 +4,7 @@
   <title>Worm IO Game</title>
   <style>
     body { margin: 0; background: #000; display: flex; justify-content: center; }
-    #game-container { display: flex; gap: 20px; margin-top: 20px; }
+    #game-container { display: flex; gap: 20px; margin-top: 20px; position: relative; }
     canvas { background: #111; border: 2px solid #444; }
     #menu {
       text-align: center;
@@ -43,7 +43,7 @@
     <button onclick="startGame()">Start Game</button>
   </div>
 
-  <div id="game-container" style="display: none; position: relative;">
+  <div id="game-container" style="display: none;">
     <canvas id="game" width="600" height="600"></canvas>
     <div id="leaderboard"></div>
     <div id="growth-container" style="position: absolute; width: 100%;"></div>
@@ -98,12 +98,10 @@
         const p = players[id];
         ctx.fillStyle = p.color || "lime";
 
-        // Draw snake head
-        ctx.fillRect(p.x, p.y, 10, 10);
-
-        // Draw tail based on length
-        for (let i = 1; i < p.length; i++) {
-          ctx.fillRect(p.x - i * 10, p.y, 10, 10);
+        if (p.trail) {
+          p.trail.forEach(([tx, ty]) => ctx.fillRect(tx, ty, 10, 10));
+        } else {
+          ctx.fillRect(p.x, p.y, 10, 10);
         }
 
         leaderboardArray.push({ name: p.name || "???", score: p.length });
@@ -112,8 +110,7 @@
       leaderboardArray.sort((a, b) => b.score - a.score);
       leaderboard.innerHTML = `<h3>Leaderboard</h3>` + leaderboardArray.map(p => `${p.name} - ${p.score}`).join("<br>");
 
-      // Flash growth messages
-      if (growth && growth.length > 0) {
+      if (growth && Array.isArray(growth)) {
         growth.forEach(msg => showGrowthMessage(msg));
       }
     };
