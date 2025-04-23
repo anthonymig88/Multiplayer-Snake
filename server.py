@@ -53,7 +53,7 @@ async def broadcast_loop():
         await asyncio.sleep(0.1)
 
 async def main():
-    port = int(os.environ.get("PORT", 6789))  # Render sets PORT
+    port = int(os.environ.get("PORT", 6789))
     async with websockets.serve(handler, "0.0.0.0", port):
         print(f"WebSocket server running on port {port}")
         await broadcast_loop()
