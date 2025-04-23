@@ -2,6 +2,7 @@ import asyncio
 import websockets
 import json
 import random
+import os
 
 players = {}
 connections = set()
@@ -52,8 +53,9 @@ async def broadcast_loop():
         await asyncio.sleep(0.1)
 
 async def main():
-    async with websockets.serve(handler, "129.161.138.26", 6789):
-        print("WebSocket server running at ws://129.161.138.26:6789")
+    port = int(os.environ.get("PORT", 6789))  # Render sets PORT
+    async with websockets.serve(handler, "0.0.0.0", port):
+        print(f"WebSocket server running on port {port}")
         await broadcast_loop()
 
 asyncio.run(main())

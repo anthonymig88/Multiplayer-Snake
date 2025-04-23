@@ -41,7 +41,7 @@
     const usernameInput = document.getElementById("username");
     const leaderboard = document.getElementById("leaderboard");
     const gameContainer = document.getElementById("game-container");
-    const socket = new WebSocket("ws://129.161.138.26:6789");
+    const socket = new WebSocket("wss://multiplayer-snake-lukb.onrender.com");
     let snakeColor = colorPicker.value;
 
     function startGame() {
