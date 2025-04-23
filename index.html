@@ -15,6 +15,20 @@
       font-family: monospace;
       width: 200px;
     }
+    .growth-msg {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: lime;
+      font-family: monospace;
+      font-size: 24px;
+      animation: fadeOut 1s ease-out forwards;
+    }
+    @keyframes fadeOut {
+      0% { opacity: 1; }
+      100% { opacity: 0; transform: translateX(-50%) translateY(-30px); }
+    }
   </style>
 </head>
 <body>
@@ -29,9 +43,10 @@
     <button onclick="startGame()">Start Game</button>
   </div>
 
-  <div id="game-container" style="display: none;">
+  <div id="game-container" style="display: none; position: relative;">
     <canvas id="game" width="600" height="600"></canvas>
     <div id="leaderboard"></div>
+    <div id="growth-container" style="position: absolute; width: 100%;"></div>
   </div>
 
   <script>
@@ -41,6 +56,7 @@
     const usernameInput = document.getElementById("username");
     const leaderboard = document.getElementById("leaderboard");
     const gameContainer = document.getElementById("game-container");
+    const growthContainer = document.getElementById("growth-container");
     const socket = new WebSocket("wss://multiplayer-snake-lukb.onrender.com");
     let snakeColor = colorPicker.value;
 
@@ -61,8 +77,16 @@
       if (dir) socket.send(JSON.stringify({ dir }));
     });
 
+    function showGrowthMessage(text) {
+      const msg = document.createElement("div");
+      msg.className = "growth-msg";
+      msg.textContent = text;
+      growthContainer.appendChild(msg);
+      setTimeout(() => msg.remove(), 1000);
+    }
+
     socket.onmessage = function(event) {
-      const { players, apple } = JSON.parse(event.data);
+      const { players, apple, growth } = JSON.parse(event.data);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       ctx.fillStyle = "red";
@@ -73,12 +97,25 @@
       for (const id in players) {
         const p = players[id];
         ctx.fillStyle = p.color || "lime";
+
+        // Draw snake head
         ctx.fillRect(p.x, p.y, 10, 10);
+
+        // Draw tail based on length
+        for (let i = 1; i < p.length; i++) {
+          ctx.fillRect(p.x - i * 10, p.y, 10, 10);
+        }
+
         leaderboardArray.push({ name: p.name || "???", score: p.length });
       }
 
       leaderboardArray.sort((a, b) => b.score - a.score);
       leaderboard.innerHTML = `<h3>Leaderboard</h3>` + leaderboardArray.map(p => `${p.name} - ${p.score}`).join("<br>");
+
+      // Flash growth messages
+      if (growth && growth.length > 0) {
+        growth.forEach(msg => showGrowthMessage(msg));
+      }
     };
   </script>
 </body>
