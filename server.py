@@ -105,13 +105,13 @@ async def start_http_server():
     app.router.add_get("/", health_check)
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", 10000)
+    site = web.TCPSite(runner, "129.161.138.26", 10000)
     await site.start()
 
 async def main():
     port = int(os.environ.get("PORT", 6789))
     await start_http_server()
-    async with websockets.serve(handler, "0.0.0.0", port):
+    async with websockets.serve(handler, "129.161.138.26", port):
         print(f"WebSocket server running on port {port}")
         await broadcast_loop()
 
