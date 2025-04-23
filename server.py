@@ -9,12 +9,15 @@ players = {}
 connections = set()
 apple = {"x": 300, "y": 300}
 
+def clamp(val, minv, maxv):
+    return max(minv, min(maxv, val))
+
 async def handler(ws):
     player_id = str(id(ws))
     players[player_id] = {
         "x": 100, "y": 100,
-        "length": 1,
-        "trail": [[100, 100]],
+        "length": 5,
+        "trail": [[100, 100]] * 5,
         "color": "lime",
         "dir": "right",
         "name": f"Player-{player_id[-4:]}"
@@ -37,24 +40,24 @@ async def handler(ws):
 async def broadcast_loop():
     while True:
         growth_messages = []
-        for pid in players:
-            p = players[pid]
-            dx = dy = 0
+        for pid, p in players.items():
+            dx, dy = 0, 0
             if p["dir"] == "up": dy = -10
             elif p["dir"] == "down": dy = 10
             elif p["dir"] == "left": dx = -10
             elif p["dir"] == "right": dx = 10
 
-            new_x = max(0, min(590, p["x"] + dx))
-            new_y = max(0, min(590, p["y"] + dy))
+            new_x = clamp(p["x"] + dx, 0, 590)
+            new_y = clamp(p["y"] + dy, 0, 590)
             p["x"], p["y"] = new_x, new_y
             p["trail"].insert(0, [new_x, new_y])
-            p["trail"] = p["trail"][:p["length"]]
+            if len(p["trail"]) > p["length"]:
+                p["trail"].pop()
 
             if abs(new_x - apple["x"]) < 10 and abs(new_y - apple["y"]) < 10:
                 p["length"] += 1
-                apple["x"] = random.randint(50, 550)
-                apple["y"] = random.randint(50, 550)
+                apple["x"] = random.randint(0, 59) * 10
+                apple["y"] = random.randint(0, 59) * 10
                 growth_messages.append(f"+1 {p['name']}")
 
         data = json.dumps({"players": players, "apple": apple, "growth": growth_messages})

@@ -86,34 +86,42 @@
     }
 
     socket.onmessage = function(event) {
-      const { players, apple, growth } = JSON.parse(event.data);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const { players, apple, growth } = JSON.parse(event.data);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      ctx.fillStyle = "red";
-      ctx.fillRect(apple.x, apple.y, 10, 10);
+    // Draw apple
+    ctx.fillStyle = "red";
+    ctx.fillRect(apple.x, apple.y, 10, 10);
 
-      const leaderboardArray = [];
+    const leaderboardArray = [];
 
-      for (const id in players) {
-        const p = players[id];
-        ctx.fillStyle = p.color || "lime";
+    for (const id in players) {
+      const p = players[id];
+      ctx.fillStyle = p.color || "lime";
 
-        if (p.trail) {
-          p.trail.forEach(([tx, ty]) => ctx.fillRect(tx, ty, 10, 10));
-        } else {
-          ctx.fillRect(p.x, p.y, 10, 10);
+      // ✅ Draw entire trail correctly
+      if (Array.isArray(p.trail)) {
+        for (let segment of p.trail) {
+          if (Array.isArray(segment) && segment.length === 2) {
+            const [x, y] = segment;
+            ctx.fillRect(x, y, 10, 10);
+          }
         }
-
-        leaderboardArray.push({ name: p.name || "???", score: p.length });
       }
 
-      leaderboardArray.sort((a, b) => b.score - a.score);
-      leaderboard.innerHTML = `<h3>Leaderboard</h3>` + leaderboardArray.map(p => `${p.name} - ${p.score}`).join("<br>");
+      leaderboardArray.push({ name: p.name || "???", score: p.length });
+    }
 
-      if (growth && Array.isArray(growth)) {
-        growth.forEach(msg => showGrowthMessage(msg));
-      }
-    };
+    // Draw leaderboard
+    leaderboardArray.sort((a, b) => b.score - a.score);
+    leaderboard.innerHTML = `<h3>Leaderboard</h3>` + leaderboardArray.map(p => `${p.name} - ${p.score}`).join("<br>");
+
+    // Draw pop-up messages
+    if (growth && Array.isArray(growth)) {
+      growth.forEach(showGrowthMessage);
+    }
+  };
+
   </script>
 </body>
 </html>
